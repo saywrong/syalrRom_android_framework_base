@@ -1,4 +1,8 @@
+#ifndef __SYP_H_
+#define __SYP_H_
 #include <utils/Log.h>
+
+#include "utils.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -20,15 +24,16 @@ extern "C" {
 #define ERROR_PRINT(format,args...) \
     LOGE(format, ##args)    
 
-int getProcessName(char * buffer);
+
 
 int spy_client_init();
 void spy_create_socket();
-
 void spy_zygote_init();
 void spy_init();
 
 
 #ifdef __cplusplus
 }
+#endif
+
 #endif

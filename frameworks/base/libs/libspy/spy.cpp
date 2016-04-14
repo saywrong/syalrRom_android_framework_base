@@ -35,8 +35,9 @@ void enable_spy_invoke()
 void spy_zygote_init()
 {
     spy_create_socket();
-    add_spy_target("com.MobileTicket");
-    add_spy_target("com.svox.pico");
+    // add_spy_target("com.MobileTicket");
+    add_spy_target("crackme.a3");
+    add_spy_target("com.example.hellojni");
     // add_spy_target("com.tencent.android.qqdownloader");
     // add_spy_target("com.tencent.android.qqdownloader_getapkinfo");
     // add_spy_target("com.tencent.android.qqdownloader_connect");

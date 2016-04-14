@@ -12,6 +12,7 @@
 #include "HookFileOp.h"
 #include "HookKill.h"
 #include "HookLoadDex.h"
+#include "HookDvmCallJNIMethod.h"
 
 #include <libdex/DexFile.h>
 
@@ -67,7 +68,7 @@ void post_dvmRawDexFileOpenArray_handler(PHook_Context context)
     DvmDex* pDvmDex = pDexFile->pDvmDex;
     const DexHeader*    pHeader = pDvmDex->pHeader;
 
-    DEBUG_PRINT("[libdvm.dvmRawDexFileOpenArray] start: %d,lenth: %d,ret: %d \n", args->pBytes, args->length, args->ret);
+    DEBUG_PRINT("[libdvm.dvmRawDexFileOpenArray] start: %p,lenth: %d,ret: %d \n", args->pBytes, args->length, args->ret);
     DEBUG_PRINT("[libdvm.dvmRawDexFileOpenArray] DexFile start %p, lenth %x\n",pHeader,pHeader->fileSize);
     
     DEBUG_PRINT("dumping dex..\n");
@@ -84,6 +85,44 @@ void post_dvmRawDexFileOpenArray_handler(PHook_Context context)
     DEBUG_PRINT("open file error\n");
 }
 
+void *g_start;
+size_t g_len;
+char g_filepath[512];
+
+void post_dvmJarFileOpen_handler(PHook_Context context)
+{
+    PdvmJarFileOpen_args args = (PdvmJarFileOpen_args)context->args;
+
+    JarFile** ppJarFile = args->ppJarFile;
+    JarFile* pJarFile = *ppJarFile;
+    char * cacheName = pJarFile->cacheFileName;
+    DvmDex* pDvmDex = pJarFile->pDvmDex;
+    const DexHeader* pHeader = pDvmDex->pHeader;
+
+    // DEBUG_PRINT("[libdvm.dvmJarFileOpen] start: %p,lenth: %d,ret: %d \n", args->pBytes, args->length, args->ret);
+    DEBUG_PRINT("[libdvm.dvmJarFileOpen] DexFile start %p, lenth %x\n",pHeader,pHeader->fileSize);
+    
+    char *filename = strstr_reverse(args->fileName, "/");
+    char filepath[512];
+    if(filename)
+        sprintf(filepath,"/data/local/tmp/%s.dex", filename+1);
+    else 
+        sprintf(filepath,"/data/local/tmp/%s.dex", "tmp");
+    strcpy(g_filepath, filepath);
+
+    // dumpMemToFile((void *)pHeader, pHeader->fileSize, filepath);
+    g_start = (void*)pHeader;
+    g_len = pHeader->fileSize;
+}
+
+
+void pre_dvmCallJNIMethod_handler(PHook_Context context)
+{
+    PDvmCallJNIMethod_args args = (PDvmCallJNIMethod_args)context->args;
+    Method* method = args->method;
+    if(!strcmp(method->name,"Ooo0ooO0oO"))
+        dumpMemToFile(g_start, g_len, g_filepath);
+}
 
 void spy_hook_init()
 {
@@ -94,6 +133,10 @@ void spy_hook_init()
     register_hook_handler("libc.open", POST_HANDLER, post_open_handler);
     register_hook_handler("libdvm.dvmRawDexFileOpenArray", POST_HANDLER, 
         post_dvmRawDexFileOpenArray_handler);
+    register_hook_handler("libdvm.dvmJarFileOpen", POST_HANDLER, 
+        post_dvmJarFileOpen_handler);
+    register_hook_handler("libdvm.so-dvmCallJNIMethod", PRE_HANDLER, 
+        pre_dvmCallJNIMethod_handler);
 
     HookManager::getHookManager()->start();
     // size_t used = MSHookFunction(open, my_open, (void**) (&old_open));

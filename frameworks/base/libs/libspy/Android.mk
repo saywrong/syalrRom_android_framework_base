@@ -3,7 +3,7 @@ include $(CLEAR_VARS)
 
 LOCAL_MODULE_TAGS := optional
 
-LOCAL_LDLIBS    := -llog -ldl
+LOCAL_LDLIBS    := -llog -ldl -landroid_runtime
 LOCAL_CFLAGS    := -O2 -pie -fPIE
 
 
@@ -17,6 +17,8 @@ LOCAL_SRC_FILES :=  Substrate/SubstrateHook.cpp \
                     HookLib/HookLoadDex.cpp\
                     HookLib/HookMain.cpp\
                     HookLib/HookDvmInterp.cpp\
+                    HookLib/HookDvmCallJNIMethod.cpp\
+                    dalvikWatcher/invokeWatcher.cpp\
                     spy.cpp\
                     socket_client.cpp\
                     utils.cpp\
@@ -29,6 +31,7 @@ LOCAL_SHARED_LIBRARIES := \
     liblog \
     libdvm \
     libdl \
+    libandroid_runtime
     
 
 LOCAL_C_INCLUDES := \

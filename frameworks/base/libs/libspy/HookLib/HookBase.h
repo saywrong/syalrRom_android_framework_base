@@ -6,6 +6,7 @@
 #include "../Substrate/SubstrateHook.h"
 
 #include "../spy.h"
+#include "../utils.h"
 
 typedef struct _hook_context
 {

@@ -8,14 +8,17 @@ typedef void (*DVMINTERPRET_FUNC)(void*, Method*, void*);
 
 void my_dvmInterpret(void* thread,Method* method, void* pResult);
 
-HookBase *hook_dvmInterpret = new HookBase("libdvm.dvmInterpret", (void*)NULL, (void*)my_dvmInterpret);
+HookBase *hook_dvmInterpret = new HookBase("libdvm.so-dvmInterpret", (void*)NULL, (void*)my_dvmInterpret);
 
 
 void my_dvmInterpret(void* thread, Method* method, void* pResult)
 {
+    if(strcmp(method->name, "dispatchVsync"))
+    {
 
-    DEBUG_PRINT("my_dvmInterpret is called.");
-    DEBUG_PRINT("method name:%s", method->name);
+        // DEBUG_PRINT("reflect call method name:%s", method->name);
+        DEBUG_PRINT("reflect call %s->%s",method->clazz->descriptor, method->name);
+    }
 
     DvmInterp_args args;
 

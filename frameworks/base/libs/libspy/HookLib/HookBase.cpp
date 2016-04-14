@@ -113,9 +113,10 @@ void HookBase::startHook()
         // symname from the hookname 
         //
         char libname[HOOK_NAME_MAX_LEN];
-        char *symbol = strstr(name,".") + 1;
+        memset(libname,0,HOOK_NAME_MAX_LEN);
+        char *symbol = strstr(name,"-") + 1;
         int libname_len = symbol - this->name;
-        memcpy(libname,name,libname_len);
+        memcpy(libname,name,libname_len-1);
 
         DEBUG_PRINT("target is NULL, libname:%s symname:%s\n",
                                              libname, symbol);
