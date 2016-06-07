@@ -31,6 +31,8 @@ void spy_create_socket();
 void spy_zygote_init();
 void spy_init();
 
+#define CONFIG_FILE "/data/local/tmp/sylarSpy.cfg"
+void read_config();
 
 #ifdef __cplusplus
 }

@@ -67,6 +67,8 @@ bool isIgnoreClass(const char *str)
         return true;
     if(isStartWith(str,"Ldalvik/"))
         return true;
+    if(isStartWith(str,"Lcom/google/"))
+        return true;
     return false;
 }
 
@@ -115,18 +117,21 @@ char* jstring2string(void *jstr)
 {
     if(!g_env)
         getEnv();
-    DEBUG_PRINT("11111");
+    // DEBUG_PRINT("11111");
     char *ret = NULL;
     jclass clsstring = g_env->FindClass("java/lang/String");
     jstring strencode = g_env->NewStringUTF("utf-8");
-    DEBUG_PRINT("4444");
+    // DEBUG_PRINT("4444");
     jmethodID mid = g_env->GetMethodID(clsstring, "getBytes", "(Ljava/lang/String;)[B");
- DEBUG_PRINT("33333");
+    DEBUG_PRINT("%p", jstr);
     jbyteArray barr= (jbyteArray)g_env->CallObjectMethod( (jobject)jstr, mid, strencode);
-    DEBUG_PRINT("22222");
+    // DEBUG_PRINT("22222");
+    DEBUG_PRINT("%p", jstr);
     jsize alen = g_env->GetArrayLength(barr);
+    DEBUG_PRINT("%p", jstr);
     jbyte* ba = g_env->GetByteArrayElements(barr, JNI_FALSE);
-    DEBUG_PRINT("22222");
+    DEBUG_PRINT("%p", jstr);
+    // DEBUG_PRINT("22222");
     if (alen > 0)
     {
         if(alen > 512)
@@ -139,7 +144,9 @@ char* jstring2string(void *jstr)
         ret = jstring2string_buff;
     }
    
+    DEBUG_PRINT("%p", jstr);
     g_env->ReleaseByteArrayElements( barr, ba, 0);
+    DEBUG_PRINT("%p", jstr);
     return ret;
 } 
 

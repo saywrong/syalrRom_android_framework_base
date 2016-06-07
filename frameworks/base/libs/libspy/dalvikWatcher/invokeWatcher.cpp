@@ -1,68 +1,127 @@
 #include "invokeWatcher.h"
 #include "spy.h"
 #include "../utils.h"
+#include "dalvikWatcher.h"
 
-#define SAVEAREA_FROM_FP(_fp)   ((char*)(_fp) -20)
 
-#define OUTS_FROM_SP(_sp, _argCount) \
-    ((u4*) ((u1*)_sp - sizeof(u4) * (_argCount)))
 
-void *getArg(void *sp)
-{
-    // void *sp = SAVEAREA_FROM_FP(fp);
-    return (void*)(sp-1);
+extern PSYLARJSTRING2CSTR sylarJstring2Cstr;
+
+char* methodDescriptorNextArgType(char* descriptor, char *buf) {
+    // Skip any array references.
+
+    // ERROR_PRINT("methodDescriptorNextArgType 1");
+    if(descriptor==NULL)
+        return NULL;
+
+    while (*descriptor == '(') {
+        descriptor++;
+    }
+
+
+    if(*descriptor == ')')
+        return NULL;
+    while(*descriptor == ' ')
+        descriptor++;  
+
+    memset(buf,0,64);
+    char *start=NULL,*end=NULL;
+    // ERROR_PRINT("methodDescriptorNextArgType 2");
+    switch (*descriptor) {
+        case '[':{
+            start = start ? start:descriptor;
+            descriptor++;
+        }
+
+        case 'B': case 'C': case 'D': case 'F':
+        case 'I': case 'J': case 'S': case 'Z': {
+
+            start = start ? start : descriptor;
+            end = descriptor + 1;
+            break;
+        }
+        case 'L': {
+            start = start ? start:descriptor;
+            end = strchr(descriptor + 1, ';');
+            if(end != NULL)
+            {
+                end++;  
+            }
+            else
+                ERROR_PRINT("error look L end\n");
+            break;
+        }
+        default:
+        {
+            ERROR_PRINT("unknown type %c", *descriptor);
+            break;
+        }
+    }
+    // ERROR_PRINT("methodDescriptorNextArgType 3");
+    if(start&&end)
+    {
+        uint len = end - start;
+        len = len>=64? 63:len;
+        memcpy(buf, start, len);
+    }
+    // ERROR_PRINT("methodDescriptorNextArgType 4");
+    return end;
 }
-
-// char* getMethodProto(DexProto *dp)
-// {
-//     const DexFile* dexFile = pProto->dexFile;
-//     const DexProtoId* protoId = getProtoId(pProto);
-//     const DexTypeList* typeList = dexGetProtoParameters(dexFile, protoId);
-//     size_t length = 3; // parens and terminating '\0'
-//     u4 paramCount = (typeList == NULL) ? 0 : typeList->size;
-//     u4 i;
-
-//     for (i = 0; i < paramCount; i++) {
-//         u4 idx = dexTypeListGetIdx(typeList, i);
-//         length += strlen(dexStringByTypeIdx(dexFile, idx));
-//     }
-
-//     length += strlen(dexStringByTypeIdx(dexFile, protoId->returnTypeIdx));
-
-//     dexStringCacheAlloc(pCache, length);
-
-//     char *at = (char*) pCache->value;
-//     *(at++) = '(';
-
-//     for (i = 0; i < paramCount; i++) {
-//         u4 idx = dexTypeListGetIdx(typeList, i);
-//         const char* desc = dexStringByTypeIdx(dexFile, idx);
-//         strcpy(at, desc);
-//         at += strlen(desc);
-//     }
-
-//     *(at++) = ')';
-
-//     strcpy(at, dexStringByTypeIdx(dexFile, protoId->returnTypeIdx));
-//     return pCache->value;
-// }
-
-void dalvik_invoke_watcher(Method *curMethod, Method *callMethod, void *sp, void *thread)
+int temp = 0;
+void dalvik_invoke_watcher(Method *curMethod, Method *callMethod, _u4 *outs, char *desc, void *thread)
 {
     ClassObject* curclazz = curMethod->clazz;
     ClassObject* callClazz = callMethod->clazz;
 
-    // if(isIgnoreClass(curclazz->descriptor) && isIgnoreClass(callClazz->descriptor))
-    //     return;
-    // DEBUG_PRINT("%s.%s:%p calling %s.%s:%p\n",curclazz->descriptor, curMethod->name, curMethod->insns,
-    //                               callClazz->descriptor, callMethod->name, callMethod->insns);
-    if(!strcmp(callClazz->descriptor,"Ljava/lang/System;")&&!strcmp(callMethod->name,"loadLibrary"))
-    {
-        ERROR_PRINT("loadLibrary is called\n");
-        ERROR_PRINT("shorty: %s\n", callMethod->shorty);
-        u4* outs = OUTS_FROM_SP(sp,1);
-        char *str = jstring2string((void*)outs);
-        ERROR_PRINT("loadLibrary name: %s",str);
+    if(isIgnoreClass(curclazz->descriptor) && isIgnoreClass(callClazz->descriptor))
+        return;
+    DEBUG_PRINT("%s.%s calling %s.%s\n",curclazz->descriptor, curMethod->name,
+                                  callClazz->descriptor, callMethod->name);
+    DEBUG_PRINT("method desc:%s", desc);
+    // DEBUG_PRINT("method accessFlags:%x", callMethod->accessFlags);
+    
+    // char argtype_buff[64];
+    // char *iter = methodDescriptorNextArgType(desc, argtype_buff);
+    int arg_ount=0;
+    u4 accessFlags = callMethod->accessFlags;
+
+    if( (accessFlags & ACC_STATIC) == 0)
+        //not static method, skip *this
+        arg_ount++;
+    char *iter = callMethod->shorty;
+
+    // ERROR_PRINT("shorty-> %s\n",iter);
+    while((*++iter) != '\0')
+    {   
+        // ERROR_PRINT("arg %d type: %s iter:%p ", arg_ount, argtype_buff, iter);
+        // if(!strcmp(argtype_buff, "Ljava/lang/String;"))
+        // {
+            // ERROR_PRINT("jstring out[%d]: %x \n",arg_ount, outs[arg_ount]);
+        switch(*iter){
+            case 'L':
+            {
+                // ERROR_PRINT("argcount %d \n", arg_ount);
+                char *str = sylarJstring2Cstr((void*)(outs[arg_ount]));
+                if(str!=NULL)
+                {
+                    ERROR_PRINT("arg %d is JavaString: %s", arg_ount, str);
+                    // ERROR_PRINT("jstring out[%d]: %x \n",arg_ount, outs[arg_ount]);
+                    free(str);
+                }
+                
+                break;
+            }
+            case 'D':
+            case 'J':
+                arg_ount++;
+                break;
+            default:
+                /* Z B C S I -- do nothing */
+                break;
+        }
+        arg_ount++;
+        
+        
     }
 
 }

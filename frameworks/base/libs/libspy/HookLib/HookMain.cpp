@@ -94,10 +94,16 @@ void post_dvmJarFileOpen_handler(PHook_Context context)
     PdvmJarFileOpen_args args = (PdvmJarFileOpen_args)context->args;
 
     JarFile** ppJarFile = args->ppJarFile;
+    if(ppJarFile==NULL)
+        return;
     JarFile* pJarFile = *ppJarFile;
+    if(pJarFile==NULL)
+        return;
     char * cacheName = pJarFile->cacheFileName;
     DvmDex* pDvmDex = pJarFile->pDvmDex;
     const DexHeader* pHeader = pDvmDex->pHeader;
+    if(pHeader==NULL)
+        return;
 
     // DEBUG_PRINT("[libdvm.dvmJarFileOpen] start: %p,lenth: %d,ret: %d \n", args->pBytes, args->length, args->ret);
     DEBUG_PRINT("[libdvm.dvmJarFileOpen] DexFile start %p, lenth %x\n",pHeader,pHeader->fileSize);
@@ -120,8 +126,10 @@ void pre_dvmCallJNIMethod_handler(PHook_Context context)
 {
     PDvmCallJNIMethod_args args = (PDvmCallJNIMethod_args)context->args;
     Method* method = args->method;
-    if(!strcmp(method->name,"Ooo0ooO0oO"))
-        dumpMemToFile(g_start, g_len, g_filepath);
+    if(!isIgnoreClass(method->clazz->descriptor))
+        DEBUG_PRINT("native call %s->%s:%p\n",method->clazz->descriptor, method->name, method->insns);
+    // if(!strcmp(method->name,"Ooo0ooO0oO"))
+    //     dumpMemToFile(g_start, g_len, g_filepath);
 }
 
 void spy_hook_init()
@@ -133,8 +141,8 @@ void spy_hook_init()
     register_hook_handler("libc.open", POST_HANDLER, post_open_handler);
     register_hook_handler("libdvm.dvmRawDexFileOpenArray", POST_HANDLER, 
         post_dvmRawDexFileOpenArray_handler);
-    register_hook_handler("libdvm.dvmJarFileOpen", POST_HANDLER, 
-        post_dvmJarFileOpen_handler);
+    // register_hook_handler("libdvm.dvmJarFileOpen", POST_HANDLER, 
+    //     post_dvmJarFileOpen_handler);
     register_hook_handler("libdvm.so-dvmCallJNIMethod", PRE_HANDLER, 
         pre_dvmCallJNIMethod_handler);
 

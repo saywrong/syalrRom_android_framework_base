@@ -19,6 +19,7 @@ LOCAL_SRC_FILES :=  Substrate/SubstrateHook.cpp \
                     HookLib/HookDvmInterp.cpp\
                     HookLib/HookDvmCallJNIMethod.cpp\
                     dalvikWatcher/invokeWatcher.cpp\
+                    dalvikWatcher/main.cpp\
                     spy.cpp\
                     socket_client.cpp\
                     utils.cpp\

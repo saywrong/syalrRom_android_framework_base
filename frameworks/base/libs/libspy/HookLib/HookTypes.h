@@ -75,7 +75,7 @@ struct Method {
     u2              insSize;
 
     /* method name, e.g. "<init>" or "eatLunch" */
-    const char*     name;
+    char*     name;
 
     /*
      * Method prototype descriptor string (return and argument types).
@@ -88,7 +88,7 @@ struct Method {
     DexProto        prototype;
 
     /* short-form method descriptor string */
-    const char*     shorty;
+    char*     shorty;
 
     /*
      * The remaining items are not used for abstract or native methods.

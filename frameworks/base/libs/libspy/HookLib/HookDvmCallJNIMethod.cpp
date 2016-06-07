@@ -13,12 +13,9 @@ HookBase *hook_dvmCallJNIMethod = new HookBase("libdvm.so-dvmCallJNIMethod", (vo
 
 void my_dvmCallJNIMethod(u4* args, void* pResult, Method* method, void* thread)
 {
-    if(strcmp(method->name, "dispatchVsync"))
-    {
 
-        if(!isIgnoreClass(method->clazz->descriptor))
-            DEBUG_PRINT("native call %s->%s:%p",method->clazz->descriptor, method->name, method->insns);
-    }
+    // if(!isIgnoreClass(method->clazz->descriptor))
+    //     DEBUG_PRINT("native call %s->%s:%p",method->clazz->descriptor, method->name, method->insns);
 
     DvmCallJNIMethod_args args1;
 
